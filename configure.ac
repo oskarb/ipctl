@@ -23,5 +23,5 @@ AC_PROG_LIBTOOL
 
 # Checks for library functions.
 
-AC_OUTPUT(Makefile src/cli/Makefile src/libipctl/Makefile)
+AC_OUTPUT(Makefile src/cli/Makefile src/libipctl/Makefile include/libipctl/Makefile)
 
