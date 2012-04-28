@@ -13,6 +13,7 @@ AM_INIT_AUTOMAKE(ipctl, 0.1)
 
 # Checks for programs.
 AC_PROG_CC_C99
+AC_PROG_LIBTOOL
 
 # Checks for libraries.
 
@@ -22,5 +23,5 @@ AC_PROG_CC_C99
 
 # Checks for library functions.
 
-AC_OUTPUT(Makefile src/cli/Makefile)
+AC_OUTPUT(Makefile src/cli/Makefile src/libipctl/Makefile)
 
