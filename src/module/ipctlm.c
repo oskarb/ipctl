@@ -1,145 +1,197 @@
-#include <linux/module.h>	/* Needed by all modules */
-#include <linux/kernel.h>	/* Needed for KERN_INFO */
-#include <linux/init.h>	/* Needed for the init/exit macros. */
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
 #include <linux/inetdevice.h>
 #include <linux/netdevice.h>
 #include <net/netlink.h>
 #include <net/genetlink.h>
+#include "../../include/libipctl/ipctl-nl.h"
 
 #define MOD_AUTHOR "Oskar Berggren <oskar.berggren@gmail.com>"
 #define MOD_DESC "A module to offer efficient mass control of the IP sysctl family traditionally controlled through /proc."
 #define MOD_VER "0.1"
 
-static int ipctl_set_proxyarp_by_ifindex(int ifIndex, int on)
+
+static int ipctl_get_proxyarp_by_ifindex(int ifIndex, int *on)
 {
-  struct net *net = &init_net;
-  struct net_device *dev;
-  struct in_device *in_dev;
+	struct net *net = &init_net;
+	struct net_device *dev;
+	struct in_device *in_dev;
 
-  dev = dev_get_by_index(net, ifIndex);
+	dev = dev_get_by_index(net, ifIndex);
 
-  if (dev)
-  {
-    if (__in_dev_get_rtnl(dev)) {
-      in_dev = __in_dev_get_rtnl(dev);
-      IN_DEV_CONF_SET(in_dev, PROXY_ARP, on);
-    }
+	if (dev)
+	{
+		if (__in_dev_get_rtnl(dev))
+		{
+			in_dev = __in_dev_get_rtnl(dev);
+			*on = IN_DEV_CONF_GET(in_dev, PROXY_ARP);
+		}
 
-    dev_put(dev);  // Release reference.
-  }
+		dev_put(dev);  // Release reference.
+	}
 
-  return 0;
+	return 0;
 }
 
 
-/* attributes */
-  enum {
-        IPCTL_ATTR_UNSPEC,
-        IPCTL_ATTR_IFINDEX,
-        IPCTL_ATTR_VALUE,
-        __IPCTL_ATTR_MAX,
-  };
-  #define IPCTL_ATTR_MAX (__IPCTL_ATTR_MAX - 1)
+static int ipctl_set_proxyarp_by_ifindex(int ifIndex, int on)
+{
+	struct net *net = &init_net;
+	struct net_device *dev;
+	struct in_device *in_dev;
 
-  /* attribute policy */
-  static struct nla_policy ipctl_genl_policy[IPCTL_ATTR_MAX + 1] = {
-        [IPCTL_ATTR_IFINDEX] = { .type = NLA_U32 },
-        [IPCTL_ATTR_VALUE] = { .type = NLA_U8 },
-  };
+	dev = dev_get_by_index(net, ifIndex);
 
-  /* family definition */
-  static struct genl_family ipctl_gnl_family = {
-        .id = GENL_ID_GENERATE,
-        .hdrsize = 0,
-        .name = "ipctl",
-        .version = 1,
-        .maxattr = IPCTL_ATTR_MAX,
- };
+	if (dev)
+	{
+		if (__in_dev_get_rtnl(dev))
+		{
+			in_dev = __in_dev_get_rtnl(dev);
+			IN_DEV_CONF_SET(in_dev, PROXY_ARP, on);
+		}
+
+		dev_put(dev);  // Release reference.
+	}
+
+	return 0;
+}
 
 
-/* handler */
-  int ipctl_set(struct sk_buff *skb, struct genl_info *info)
-  {
-        /* message handling code goes here; return 0 on success, negative
-         * values on failure */
-
-      int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
-      int value = nla_get_u8(info->attrs[IPCTL_ATTR_VALUE]);
-      printk(KERN_INFO "ipctl module: %d = %d.\n", ifIndex, value);
-
-      ipctl_set_proxyarp_by_ifindex(ifIndex, value);
-
-      return 0;
-  }
+/* family definition */
+static struct genl_family ipctl_gnl_family = {
+	.id = GENL_ID_GENERATE,
+	.hdrsize = 0,
+	.name = IPCTL_GENL_NAME,
+	.version = IPCTL_GENL_VERSION,
+	.maxattr = IPCTL_ATTR_MAX,
+};
 
 
-  int ipctl_get(struct sk_buff *skb, struct genl_info *info)
-  {
-        /* message handling code goes here; return 0 on success, negative
-         * values on failure */
+static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
+		       int property, int ifIndex, int value)
+{
+	struct sk_buff *skb_reply;
+	void *msg_head;
+	int rc;
 
-      return 0;
-  }
+	printk("ipctl: reply start\n");
+
+        skb_reply = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	if (skb_reply == NULL)
+		goto out;
+
+       	msg_head = genlmsg_put(skb_reply, 0, info->snd_seq, &ipctl_gnl_family, 0, IPCTL_CMD_GET);
+	if (msg_head == NULL) {
+		rc = -ENOMEM;
+		goto out;
+	}
+
+	rc = nla_put_u32(skb_reply, IPCTL_ATTR_PROPERTY, property);
+	if (rc != 0)
+		goto out;
+
+	rc = nla_put_u32(skb_reply, IPCTL_ATTR_IFINDEX, ifIndex);
+	if (rc != 0)
+		goto out;
+
+	rc = nla_put_u8(skb_reply, IPCTL_ATTR_VALUE, value);
+	if (rc != 0)
+		goto out;
+	
+        /* finalize the message */
+	genlmsg_end(skb_reply, msg_head);
+
+	rc = genlmsg_unicast(&init_net, skb_reply, info->snd_pid);
+	//rc = genlmsg_reply(skb_reply , info);
+	if (rc != 0)
+		goto out;
+
+	printk("ipctl: reply sent\n");
+	return 0;
+out:
+	printk("an error occured in ipctl_reply: %d\n", rc);
+
+	return rc;
+}
 
 
+/* handler for SET messages via NETLINK */
+int ipctl_set(struct sk_buff *skb, struct genl_info *info)
+{
+	/* message handling code goes here; return 0 on success, negative
+	 * values on failure */
 
-  /* commands */
-  enum {
-        IPCTL_CMD_UNSPEC,
-        IPCTL_CMD_SET,
-        IPCTL_CMD_GET,
-        __IPCTL_CMD_MAX,
-  };
-  #define IPCTL_CMD_MAX (__IPCTL_CMD_MAX - 1)
+	int property = nla_get_u32(info->attrs[IPCTL_ATTR_PROPERTY]);
+	int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
+	int value = nla_get_u8(info->attrs[IPCTL_ATTR_VALUE]);
+	printk(KERN_DEBUG "ipctl: set p=%d i=%d v=%d\n", property, ifIndex, value);
 
-  /* operation definition */
-  struct genl_ops ipctl_gnl_ops_set = {
-        .cmd = IPCTL_CMD_SET,
-        .flags = 0,
-        .policy = ipctl_genl_policy,
-       	.doit = ipctl_set,
-	      .dumpit = NULL,
-  };
-  struct genl_ops ipctl_gnl_ops_get = {
-        .cmd = IPCTL_CMD_GET,
-        .flags = 0,
-        .policy = ipctl_genl_policy,
-       	.doit = ipctl_get,
-	      .dumpit = NULL,
-  };
+	if (property == IPCTL_PROPERTY_PROXYARP)
+		return ipctl_set_proxyarp_by_ifindex(ifIndex, value);
+
+	return 0;
+}
 
 
+/* handler for GET messages via NETLINK */
+int ipctl_get(struct sk_buff *skb, struct genl_info *info)
+{
+	/* message handling code goes here; return 0 on success, negative
+	 * values on failure */
+
+	int property = nla_get_u32(info->attrs[IPCTL_ATTR_PROPERTY]);
+	int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
+	int value = 0;
+	int retval;
+	printk(KERN_DEBUG "ipctl: get p=%d i=%d\n", property, ifIndex);
+
+	if (property == IPCTL_PROPERTY_PROXYARP)
+		retval = ipctl_get_proxyarp_by_ifindex(ifIndex, &value);
+
+	if (retval)
+		return retval;
+
+	return ipctl_reply(skb, info, property, ifIndex, value);
+}
 
 
+/* NETLINK operation definition */
+struct genl_ops ipctl_gnl_ops_set = {
+	.cmd = IPCTL_CMD_SET,
+	.flags = 0,
+	.policy = ipctl_genl_policy,
+	.doit = ipctl_set,
+	.dumpit = NULL,
+};
+
+struct genl_ops ipctl_gnl_ops_get = {
+	.cmd = IPCTL_CMD_GET,
+	.flags = 0,
+	.policy = ipctl_genl_policy,
+	.doit = ipctl_get,
+	.dumpit = NULL,
+};
 
 
-
-
+/* module init */
 static int __init ipctl_init(void)
 {
-	printk(KERN_INFO "ipctl module.\n");
+	int rc;
 
-  genl_register_family(&ipctl_gnl_family);
-  genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_set);
-  genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_get);
+	printk(KERN_INFO "ipctl: %s.\n", MOD_VER);
 
-  int ifIndex = 2;
+	rc = genl_register_family(&ipctl_gnl_family);
+	if (rc)
+		printk("ipctl: genl_register_family: %d.\n", rc);
 
-  struct net *net = &init_net;
-  struct net_device *dev;
-  struct in_device *in_dev;
+	rc = genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_set);
+	if (rc)
+		printk("ipctl: genl_register_ops: %d.\n", rc);
 
-  dev = dev_get_by_index(net, ifIndex);
-
-  if (dev)
-  {
-    if (__in_dev_get_rtnl(dev)) {
-      in_dev = __in_dev_get_rtnl(dev);
-      IN_DEV_CONF_SET(in_dev, PROXY_ARP, 0);
-    }
-
-    dev_put(dev);  // Release reference.
-  }
+	rc = genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_get);
+	if (rc)
+		printk("ipctl: genl_register_ops: %d.\n", rc);
 
 	/* 
 	 * A non 0 return means init_module failed; module can't be loaded. 
@@ -147,10 +199,10 @@ static int __init ipctl_init(void)
 	return 0;
 }
 
+/* module exit */
 static void __exit ipctl_exit(void)
 {
-  genl_unregister_family(&ipctl_gnl_family);
-
+	genl_unregister_family(&ipctl_gnl_family);
 	printk(KERN_INFO "ipctl module exit.\n");
 }
 

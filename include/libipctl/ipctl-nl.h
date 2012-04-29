@@ -19,6 +19,13 @@ enum {
 };
 #define IPCTL_ATTR_MAX (__IPCTL_ATTR_MAX - 1)
 
+/* attribute policy */
+static struct nla_policy ipctl_genl_policy[IPCTL_ATTR_MAX + 1] = {
+	[IPCTL_ATTR_PROPERTY] = { .type = NLA_U32 },
+	[IPCTL_ATTR_IFINDEX] = { .type = NLA_U32 },
+	[IPCTL_ATTR_VALUE] = { .type = NLA_U8 },
+};
+
 
 /* NETLINK commands */
 enum {
