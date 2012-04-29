@@ -66,7 +66,7 @@ static int parse_get_response(struct nl_msg *msg, void *arg)
   }
 
   if (attrs[IPCTL_ATTR_VALUE]) {
-    value = nla_get_u32(attrs[IPCTL_ATTR_VALUE]);
+    value = nla_get_u8(attrs[IPCTL_ATTR_VALUE]);
   }
 
   if (arg)
@@ -83,11 +83,11 @@ ipctl_get_proxy_arp(struct nl_sock *socket, int family, int ifIndex, int *respon
   int rc;
   msg = nlmsg_alloc();
 
-  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_ECHO,
+  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
 	      IPCTL_CMD_GET, IPCTL_GENL_VERSION);
   nla_put_u32(msg, IPCTL_ATTR_PROPERTY, IPCTL_PROPERTY_PROXYARP);
   nla_put_u32(msg, IPCTL_ATTR_IFINDEX, ifIndex);
-  nla_put_u32(msg, IPCTL_ATTR_VALUE, 0);
+  nla_put_u8(msg, IPCTL_ATTR_VALUE, 0);
   
   // Send message over netlink socket
   rc = nl_send_auto_complete(socket, msg);
@@ -113,7 +113,9 @@ ipctl_get_proxy_arp(struct nl_sock *socket, int family, int ifIndex, int *respon
   if (recv_code)
      return recv_code;
 
-  // Remove callback.
+  /* Wait for the ACK to be received, otherwise the buffers may
+   * fill up if the client sends out requests too fast. */
+  rc = nl_wait_for_ack(socket);
   if (rc)
     return rc;
 
