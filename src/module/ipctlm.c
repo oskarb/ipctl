@@ -158,7 +158,7 @@ int ipctl_get(struct sk_buff *skb, struct genl_info *info)
 /* NETLINK operation definition */
 struct genl_ops ipctl_gnl_ops_set = {
 	.cmd = IPCTL_CMD_SET,
-	.flags = 0,
+	.flags = GENL_ADMIN_PERM,
 	.policy = ipctl_genl_policy,
 	.doit = ipctl_set,
 	.dumpit = NULL,
