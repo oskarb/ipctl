@@ -1,0 +1,8 @@
+.ipctlm.*
+.tmp_versions
+Module.symvers
+modules.order
+*.ko
+*.o
+ipctlm.mod.c
+
