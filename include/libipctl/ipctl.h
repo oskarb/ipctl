@@ -10,6 +10,9 @@
 
 
 extern int
+ipctl_lookup_genl_family(struct nl_sock *socket);
+
+extern int
 ipctl_set_proxy_arp(struct nl_sock *socket, int family, int ifIndex, int on);
 
 extern int
