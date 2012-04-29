@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src/cli src/libipctl include/libipctl
+SUBDIRS = src/libipctl include/libipctl src/cli
 
 
 modules:
