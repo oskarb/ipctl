@@ -77,11 +77,11 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 
 	printk("ipctl: reply start\n");
 
-        skb_reply = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	skb_reply = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (skb_reply == NULL)
 		goto out;
 
-       	msg_head = genlmsg_put(skb_reply, 0, info->snd_seq, &ipctl_gnl_family, 0, IPCTL_CMD_GET);
+	msg_head = genlmsg_put(skb_reply, 0, info->snd_seq, &ipctl_gnl_family, 0, IPCTL_CMD_GET);
 	if (msg_head == NULL) {
 		rc = -ENOMEM;
 		goto out;
@@ -99,11 +99,10 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 	if (rc != 0)
 		goto out;
 	
-        /* finalize the message */
+	/* finalize the message */
 	genlmsg_end(skb_reply, msg_head);
 
-	rc = genlmsg_unicast(&init_net, skb_reply, info->snd_pid);
-	//rc = genlmsg_reply(skb_reply , info);
+	rc = genlmsg_reply(skb_reply , info);
 	if (rc != 0)
 		goto out;
 
@@ -143,7 +142,7 @@ int ipctl_get(struct sk_buff *skb, struct genl_info *info)
 	int property = nla_get_u32(info->attrs[IPCTL_ATTR_PROPERTY]);
 	int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
 	int value = 0;
-	int retval;
+	int retval = 0;
 	printk(KERN_DEBUG "ipctl: get p=%d i=%d\n", property, ifIndex);
 
 	if (property == IPCTL_PROPERTY_PROXYARP)
