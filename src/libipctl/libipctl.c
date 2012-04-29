@@ -20,7 +20,7 @@ ipctl_set_proxy_arp(struct nl_sock *socket, int family, int ifIndex, int on)
   struct nl_msg *msg;
   msg = nlmsg_alloc();
 
-  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_ECHO,
+  genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, NLM_F_REQUEST,
 	      IPCTL_CMD_SET, IPCTL_GENL_VERSION);
   nla_put_u32(msg, IPCTL_ATTR_PROPERTY, IPCTL_PROPERTY_PROXYARP);
   nla_put_u32(msg, IPCTL_ATTR_IFINDEX, ifIndex);
@@ -35,13 +35,13 @@ ipctl_set_proxy_arp(struct nl_sock *socket, int family, int ifIndex, int on)
   if (rc < 0)
     return rc;
 
+  // Wait for the ACK to be received, otherwise the buffers may
+  // fill up if the client sends out requests too fast.
+  rc = nl_wait_for_ack(socket);
+  if (rc)
+    return rc;
+
   return 0;
-  // Prepare socket to receive the answer by specifying the callback
-  // function to be called for valid messages.
-  //nl_socket_modify_cb(socket, NL_CB_VALID, NL_CB_CUSTOM, parse_cb, NULL);
-  
-  // Wait for the answer and receive it
-  //nl_recvmsgs_default(socket);
 }
 
 
