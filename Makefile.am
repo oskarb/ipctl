@@ -19,3 +19,8 @@ modules_install:
 
 all: modules
 #clean: modules_clean
+
+
+EXTRA_DIST = src/module/ipctlm.c src/module/Kbuild src/module/Makefile bootstrap \
+      README.md
+
