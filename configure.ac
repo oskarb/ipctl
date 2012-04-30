@@ -10,6 +10,18 @@ AC_CONFIG_HEADERS(config.h)
 
 AM_INIT_AUTOMAKE(ipctl, 0.1)
 
+dnl Additional arguments
+dnl Kernel build directory or source tree
+AC_ARG_WITH([kbuild],
+            AS_HELP_STRING([--with-kbuild=PATH],
+                           [Path to kernel build directory]),
+            [KBUILDDIR="$withval";])
+AC_ARG_WITH([ksource],
+            AS_HELP_STRING([--with-ksource=PATH],
+                           [Path to kernel source directory, if not the same as the kernel build directory]),
+            [KSOURCEDIR="$withval";])
+AM_CONDITIONAL(WITH_KBUILDDIR, test "$KBUILDDIR" != "")
+AC_SUBST(KBUILDDIR)
 
 # Checks for programs.
 AC_PROG_CC_C99
@@ -22,6 +34,9 @@ AC_PROG_LIBTOOL
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+
+
+
 
 AC_OUTPUT(Makefile src/cli/Makefile src/libipctl/Makefile include/libipctl/Makefile)
 

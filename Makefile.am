@@ -2,12 +2,20 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src/libipctl include/libipctl src/cli
 
 
+if ! WITH_KBUILDDIR
+KBUILD_OUTPUT=/lib/modules/`uname -r`/build
+else
+KBUILD_OUTPUT=$(KBUILDDIR)
+endif
+
 modules:
-	${MAKE} -C /lib/modules/$(shell uname -r)/build M=$(PWD)/src/module modules
+	${MAKE} -C $(KBUILD_OUTPUT) M=$(PWD)/src/module modules
 
 modules_clean:
-	${MAKE} -C /lib/modules/$(shell uname -r)/build M=$(PWD)/src/module clean
+	${MAKE} -C $(KBUILD_OUTPUT) M=$(PWD)/src/module clean
 
+modules_install:
+	${MAKE} -C $(KBUILD_OUTPUT) M=$(PWD)/src/module modules_install
 
 all: modules
 #clean: modules_clean
