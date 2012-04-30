@@ -31,6 +31,9 @@ int main( int argc, const char* argv[] )
 	// Allocate a new netlink socket
 	sock = nl_socket_alloc();
 
+	//struct nl_cb *cb = nl_cb_alloc(NL_CB_DEBUG);
+	//sock = nl_socket_alloc_cb(cb);
+
 	// Connect to generic netlink socket on kernel side
 	genl_connect(sock);
 
@@ -41,16 +44,18 @@ int main( int argc, const char* argv[] )
 	{
 		int rc = ipctl_set_proxy_arp(sock, family, ifIndex, proxyArpOn);
 		if (rc)
-			fprintf(stderr, "Error: %d\n", rc);
+			fprintf(stderr, "Error: %d %s\n", rc, nl_geterror(rc));
 	}
 	else 
 	{
 		int response = -1;
 		int rc = ipctl_get_proxy_arp(sock, family, ifIndex, &response);
 		if (rc)
-			fprintf(stderr, "Error: %d\n", rc);
+			fprintf(stderr, "Error: %d %s\n", rc, nl_geterror(rc));
 		else
 			printf("%d\n", response);
 	}
+
+	nl_socket_free(sock);
 }
 
