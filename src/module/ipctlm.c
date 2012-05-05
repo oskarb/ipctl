@@ -75,7 +75,7 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 	void *msg_head;
 	int rc;
 
-	printk("ipctl: reply start\n");
+	pr_debug("ipctl: reply start\n");
 
 	skb_reply = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (skb_reply == NULL)
@@ -106,10 +106,9 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 	if (rc != 0)
 		goto out;
 
-	printk("ipctl: reply sent\n");
 	return 0;
 out:
-	printk("an error occured in ipctl_reply: %d\n", rc);
+	pr_warning("ipctl: Error occured in reply: %d\n", rc);
 
 	return rc;
 }
@@ -124,7 +123,8 @@ int ipctl_set(struct sk_buff *skb, struct genl_info *info)
 	int property = nla_get_u32(info->attrs[IPCTL_ATTR_PROPERTY]);
 	int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
 	int value = nla_get_u8(info->attrs[IPCTL_ATTR_VALUE]);
-	printk(KERN_DEBUG "ipctl: set p=%d i=%d v=%d\n", property, ifIndex, value);
+
+	pr_debug("ipctl: set p=%d i=%d v=%d\n", property, ifIndex, value);
 
 	if (property == IPCTL_PROPERTY_PROXYARP)
 		return ipctl_set_proxyarp_by_ifindex(ifIndex, value);
@@ -143,7 +143,8 @@ int ipctl_get(struct sk_buff *skb, struct genl_info *info)
 	int ifIndex = nla_get_u32(info->attrs[IPCTL_ATTR_IFINDEX]);
 	int value = 0;
 	int retval = 0;
-	printk(KERN_DEBUG "ipctl: get p=%d i=%d\n", property, ifIndex);
+
+	pr_debug("ipctl: get p=%d i=%d\n", property, ifIndex);
 
 	if (property == IPCTL_PROPERTY_PROXYARP)
 		retval = ipctl_get_proxyarp_by_ifindex(ifIndex, &value);
@@ -173,7 +174,6 @@ struct genl_ops ipctl_gnl_ops_get = {
 };
 
 
-/* module init */
 static int __init ipctl_init(void)
 {
 	int rc;
@@ -198,11 +198,10 @@ static int __init ipctl_init(void)
 	return 0;
 }
 
-/* module exit */
+
 static void __exit ipctl_exit(void)
 {
 	genl_unregister_family(&ipctl_gnl_family);
-	printk(KERN_INFO "ipctl module exit.\n");
 }
 
 
