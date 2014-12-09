@@ -73,7 +73,7 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 {
 	struct sk_buff *skb_reply;
 	void *msg_head;
-	int rc;
+	int rc = 0;
 
 	pr_debug("ipctl: reply start\n");
 
@@ -157,20 +157,21 @@ int ipctl_get(struct sk_buff *skb, struct genl_info *info)
 
 
 /* NETLINK operation definition */
-struct genl_ops ipctl_gnl_ops_set = {
-	.cmd = IPCTL_CMD_SET,
-	.flags = GENL_ADMIN_PERM,
-	.policy = ipctl_genl_policy,
-	.doit = ipctl_set,
-	.dumpit = NULL,
-};
-
-struct genl_ops ipctl_gnl_ops_get = {
-	.cmd = IPCTL_CMD_GET,
-	.flags = 0,
-	.policy = ipctl_genl_policy,
-	.doit = ipctl_get,
-	.dumpit = NULL,
+static struct genl_ops ipctl_gnl_ops[] = {
+	{
+		.cmd = IPCTL_CMD_SET,
+		.flags = GENL_ADMIN_PERM,
+		.policy = ipctl_genl_policy,
+		.doit = ipctl_set,
+		.dumpit = NULL,
+	},
+	{
+		.cmd = IPCTL_CMD_GET,
+		.flags = 0,
+		.policy = ipctl_genl_policy,
+		.doit = ipctl_get,
+		.dumpit = NULL,
+	},
 };
 
 
@@ -180,17 +181,9 @@ static int __init ipctl_init(void)
 
 	printk(KERN_INFO "ipctl: %s.\n", MOD_VER);
 
-	rc = genl_register_family(&ipctl_gnl_family);
+	rc = genl_register_family_with_ops(&ipctl_gnl_family, ipctl_gnl_ops);
 	if (rc)
 		printk("ipctl: genl_register_family: %d.\n", rc);
-
-	rc = genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_set);
-	if (rc)
-		printk("ipctl: genl_register_ops: %d.\n", rc);
-
-	rc = genl_register_ops(&ipctl_gnl_family, &ipctl_gnl_ops_get);
-	if (rc)
-		printk("ipctl: genl_register_ops: %d.\n", rc);
 
 	/* 
 	 * A non 0 return means init_module failed; module can't be loaded. 
