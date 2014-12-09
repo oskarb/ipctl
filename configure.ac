@@ -8,7 +8,7 @@ AC_INIT(ipctl, 0.1, oskar.berggren@gmail.com)
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS(config.h)
 
-AM_INIT_AUTOMAKE(ipctl, 0.1)
+AM_INIT_AUTOMAKE()
 
 dnl Additional arguments
 dnl Kernel build directory or source tree
