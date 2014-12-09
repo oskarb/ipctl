@@ -1,6 +1,7 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include $(LIBNL3_GENL_CFLAGS)
 
 sbin_PROGRAMS = ipctl
 ipctl_SOURCES = ipctl.c
-ipctl_LDADD = -lnl -lnl-genl ../libipctl/libipctl.la
+ipctl_LDFLAGS = $(LIBNL3_GENL_LIBS)
+ipctl_LDADD = ../libipctl/libipctl.la
 
