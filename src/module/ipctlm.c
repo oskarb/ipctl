@@ -9,7 +9,7 @@
 
 #define MOD_AUTHOR "Oskar Berggren <oskar.berggren@gmail.com>"
 #define MOD_DESC "A module to offer efficient mass control of the IP sysctl family traditionally controlled through /proc."
-#define MOD_VER "0.1"
+#define MOD_VER "0.2"
 
 
 static int ipctl_get_proxyarp_by_ifindex(int ifIndex, int *on)
