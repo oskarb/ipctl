@@ -25,7 +25,7 @@ AC_SUBST(KBUILDDIR)
 
 # Checks for programs.
 AC_PROG_CC_C99
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for libraries.
 PKG_CHECK_MODULES(LIBNL3_GENL, libnl-genl-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
