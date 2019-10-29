@@ -12,6 +12,9 @@
 #define MOD_VER "0.2"
 
 
+static struct genl_family ipctl_gnl_family;
+
+
 static int ipctl_get_proxyarp_by_ifindex(int ifIndex, int *on)
 {
 	struct net *net = &init_net;
@@ -56,15 +59,6 @@ static int ipctl_set_proxyarp_by_ifindex(int ifIndex, int on)
 
 	return 0;
 }
-
-
-/* family definition */
-static struct genl_family ipctl_gnl_family = {
-	.hdrsize = 0,
-	.name = IPCTL_GENL_NAME,
-	.version = IPCTL_GENL_VERSION,
-	.maxattr = IPCTL_ATTR_MAX,
-};
 
 
 static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
@@ -173,6 +167,16 @@ static struct genl_ops ipctl_gnl_ops[] = {
 	},
 };
 
+/* family definition */
+static struct genl_family ipctl_gnl_family = {
+	.hdrsize = 0,
+	.name = IPCTL_GENL_NAME,
+	.version = IPCTL_GENL_VERSION,
+	.maxattr = IPCTL_ATTR_MAX,
+	.ops = ipctl_gnl_ops,
+	.n_ops = ARRAY_SIZE(ipctl_gnl_ops),
+};
+
 
 static int __init ipctl_init(void)
 {
@@ -180,7 +184,7 @@ static int __init ipctl_init(void)
 
 	printk(KERN_INFO "ipctl: %s.\n", MOD_VER);
 
-	rc = genl_register_family_with_ops(&ipctl_gnl_family, ipctl_gnl_ops);
+	rc = genl_register_family(&ipctl_gnl_family);
 	if (rc)
 		printk("ipctl: genl_register_family: %d.\n", rc);
 
