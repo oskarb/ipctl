@@ -60,7 +60,6 @@ static int ipctl_set_proxyarp_by_ifindex(int ifIndex, int on)
 
 /* family definition */
 static struct genl_family ipctl_gnl_family = {
-	.id = GENL_ID_GENERATE,
 	.hdrsize = 0,
 	.name = IPCTL_GENL_NAME,
 	.version = IPCTL_GENL_VERSION,
