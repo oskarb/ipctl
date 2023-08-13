@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT(ipctl, 0.3, oskar.berggren@gmail.com)
+AC_INIT(ipctl, 1.0, oskar.berggren@gmail.com)
 
 #AC_CONFIG_SRCDIR([src/ipctlm.c])
 AC_CONFIG_AUX_DIR(config)

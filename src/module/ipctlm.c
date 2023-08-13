@@ -9,7 +9,7 @@
 
 #define MOD_AUTHOR "Oskar Berggren <oskar.berggren@gmail.com>"
 #define MOD_DESC "A module to offer efficient mass control of the IP sysctl family traditionally controlled through /proc."
-#define MOD_VER "0.2"
+#define MOD_VER "1.0"
 
 
 static struct genl_family ipctl_gnl_family;
