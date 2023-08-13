@@ -101,7 +101,7 @@ static int ipctl_reply(struct sk_buff *skb, struct genl_info *info,
 
 	return 0;
 out:
-	pr_warning("ipctl: Error occured in reply: %d\n", rc);
+	pr_warn("ipctl: Error occured in reply: %d\n", rc);
 
 	return rc;
 }
